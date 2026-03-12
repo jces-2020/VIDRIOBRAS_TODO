@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Test ApisPeru</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .input-group { margin-bottom: 18px; }
+    label { font-weight: 600; }
+    input, select { padding: 8px; margin-top: 6px; margin-bottom: 6px; border-radius: 6px; border: 1px solid #ccc; }
+    .result { margin-top: 18px; }
+    .error { color: red; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <h2>Consulta ApisPeru (Vía Backend)</h2>
+  <div class="input-group">
+    <label for="tipo">Tipo de documento:</label>
+    <select id="tipo">
+      <option value="">Cargando...</option>
+    </select>
+  </div>
+  <div class="input-group">
+    <label for="numero">Número:</label>
+    <input type="text" id="numero" placeholder="Ingrese número de DNI o RUC" />
+  </div>
+  <div class="result">
+    <label for="nombre">Nombre/Razón social:</label>
+    <input type="text" id="nombre" placeholder="Nombre/Razón social" readonly />
+    <div id="mensaje" class="error"></div>
+  </div>
+  <script>
+    const selectTipo = document.getElementById('tipo');
+    const inputNumero = document.getElementById('numero');
+    const inputNombre = document.getElementById('nombre');
+    const mensaje = document.getElementById('mensaje');
+
+    async function cargarTiposDocumento() {
+      const select = document.getElementById('tipo');
+      select.innerHTML = '<option value="">Cargando...</option>';
+      try {
+        const res = await fetch('/api/tipo_documento');
+        const data = await res.json();
+
+        select.innerHTML = '<option value="" selected disabled>Seleccione</option>';
+        (data.tipos || []).forEach(tipo => {
+          const opt = document.createElement('option');
+          opt.value = tipo.descripcion;
+          opt.textContent = tipo.descripcion;
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        select.innerHTML = '<option value="">Error cargando tipos</option>';
+      }
+    }
+
+    function actualizarUiPorTipo() {
+      const tipo = (selectTipo.value || '').toUpperCase();
+      mensaje.textContent = '';
+      inputNombre.value = '';
+      inputNumero.value = '';
+      if (tipo === 'DNI') {
+        inputNumero.placeholder = 'Ingrese 8 dígitos';
+        inputNumero.maxLength = 8;
+      } else if (tipo === 'RUC') {
+        inputNumero.placeholder = 'Ingrese 11 dígitos';
+        inputNumero.maxLength = 11;
+      } else {
+        inputNumero.placeholder = 'Número de documento';
+        inputNumero.removeAttribute('maxLength');
+      }
+    }
+
+    selectTipo.addEventListener('change', actualizarUiPorTipo);
+
+    function validarNumero(tipo, numero) {
+      if (!tipo || !numero) return { ok: false, msg: 'Seleccione tipo e ingrese número.' };
+      if (tipo === 'DNI' && (!/^\d{7,8}$/.test(numero))) return { ok: false, msg: 'El DNI debe tener 7 u 8 dígitos.' };
+      if (tipo === 'RUC' && (!/^\d{11}$/.test(numero))) return { ok: false, msg: 'El RUC debe tener 11 dígitos.' };
+      return { ok: true, msg: '' };
+    }
+
+    async function consultarDocumentoBackend(tipo, numero) {
+      mensaje.textContent = 'Consultando...';
+      inputNombre.value = '';
+      try {
+        const res = await fetch('/api/consulta_documento_html', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo, numero })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          inputNombre.value = data.data.nombre || data.data.razonSocial || '';
+          mensaje.textContent = 'Consulta exitosa.';
+          mensaje.style.color = 'green';
+        } else {
+          inputNombre.value = '';
+          mensaje.textContent = data.message || 'No se encontró información para ese documento.';
+          mensaje.style.color = 'red';
+        }
+      } catch (e) {
+        inputNombre.value = '';
+        mensaje.textContent = 'Error de conexión con el servidor.';
+        mensaje.style.color = 'red';
+        console.error(e);
+      }
+    }
+
+    inputNumero.addEventListener('blur', () => {
+      const tipo = (selectTipo.value || '').toUpperCase();
+      const numero = inputNumero.value.trim();
+      const valid = validarNumero(tipo, numero);
+      if (!valid.ok) {
+        mensaje.textContent = valid.msg;
+        mensaje.style.color = 'red';
+        inputNombre.value = '';
+        return;
+      }
+      consultarDocumentoBackend(tipo, numero);
+    });
+
+    document.addEventListener('DOMContentLoaded', cargarTiposDocumento);
+  </script>
+</body>
+</html>

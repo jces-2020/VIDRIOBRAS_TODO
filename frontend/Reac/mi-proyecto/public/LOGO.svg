@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_2" data-name="Capa 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 693.79 196.93">
+  <defs>
+    <style>
+      .cls-1 {
+        font-family: Bauhaus93, 'Bauhaus 93';
+        font-size: 82.55px;
+      }
+
+      .cls-2 {
+        fill: #fff;
+        letter-spacing: 0em;
+      }
+
+      .cls-3 {
+        fill: #80c2dc;
+      }
+    </style>
+  </defs>
+  <g id="Capa_1-2" data-name="Capa 1">
+    <g>
+      <text class="cls-1" transform="translate(266.94 131.85)"><tspan class="cls-3" x="0" y="0">IDRIO</tspan><tspan class="cls-2" x="226.73" y="0">BRAS </tspan></text>
+      <g>
+        <path class="cls-3" d="M134.68,102.15l-28.1,26.18c-5.59,5.21-14.44,4.57-19.21-1.4L2.9,21.34C-3.98,12.74,2.15,0,13.16,0H99.25c5.65,0,10.67,3.62,12.46,8.98l26.47,79.4c1.63,4.88,.26,10.26-3.51,13.77Z"/>
+        <path class="cls-3" d="M296.47,21.34l-84.46,105.58c-4.78,5.97-13.62,6.62-19.21,1.4l-34.27-31.94h0S187.65,8.98,187.65,8.98c1.79-5.36,6.81-8.98,12.46-8.98h86.09c11.02,0,17.14,12.74,10.26,21.34Z"/>
+        <path class="cls-3" d="M178.75,168.49l-18.81,23.51c-5.26,6.57-15.26,6.57-20.52,0l-18.81-23.51c-4.18-5.23-3.76-12.76,.97-17.5l18.81-18.81c5.13-5.13,13.45-5.13,18.58,0l18.81,18.81c4.73,4.73,5.15,12.27,.97,17.5Z"/>
+      </g>
+    </g>
+  </g>
+</svg>

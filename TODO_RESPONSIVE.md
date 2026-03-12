@@ -1,0 +1,1 @@
+# TODO Steps for Making Login/Register Responsive\n\n- [x] Step 1: Update LoginInicioSesion.jsx with responsive layout (flex-col on mobile, Tailwind classes)\n- [x] Step 2: Update LoginRegister.jsx with responsive form elements\n- [x] Step 3: Test frontend dev server (running on http://localhost:5174)\n\nResponsive design implemented!

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Facturación Electrónica</title>
+
+    <style>
+
+        body {
+            font-family: Arial;
+            margin: 40px;
+            background-color: #f4f6f8;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 500px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: bold;
+        }
+
+        input, textarea, select {
+
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+
+            margin-top: 20px;
+            padding: 12px;
+            width: 100%;
+
+            border: none;
+            background: #007bff;
+            color: white;
+
+            font-size: 16px;
+            border-radius: 5px;
+
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .result {
+
+            margin-top: 20px;
+            padding: 15px;
+
+            background: white;
+            border-radius: 5px;
+
+            border: 1px solid #ccc;
+
+            white-space: pre-wrap;
+        }
+
+    </style>
+
+</head>
+<body>
+
+<h1>Test Facturación Electrónica</h1>
+
+<form id="facturaForm">
+
+    <label>Tipo de comprobante</label>
+    <select name="tipo_comprobante" required>
+        <option value="boleta">Boleta</option>
+        <option value="factura">Factura</option>
+    </select>
+
+    <label>Nombre cliente</label>
+    <input name="nombre" required value="Cliente de prueba">
+
+    <label>Documento (DNI o RUC)</label>
+    <input name="documento" required value="20000000002">
+
+    <label>Dirección</label>
+    <input name="direccion" required value="Direccion cliente">
+
+    <label>Provincia</label>
+    <input name="provincia" required value="LIMA">
+
+    <label>Departamento</label>
+    <input name="departamento" required value="LIMA">
+
+    <label>Distrito</label>
+    <input name="distrito" required value="LIMA">
+
+    <label>Ubigeo</label>
+    <input name="ubigeo" required value="150101">
+
+    <label>Correo</label>
+    <input name="correo" value="cliente@test.com">
+
+    <label>Productos (JSON)</label>
+    <textarea name="productos" rows="5" required>
+[
+    {
+        "codigo": "P001",
+        "descripcion": "PRODUCTO 1",
+        "cantidad": 2,
+        "precio_unitario": 59
+    }
+]
+    </textarea>
+
+    <button type="submit">
+            Generar comprobante
+        </button>
+
+    </form>
+
+    <div id="result" class="result"></div>
+
+    <div id="resultActions" style="display:none; margin-top: 20px;">
+        <button id="downloadXml" style="background: #28a745;">Descargar XML</button>
+        <button id="downloadPdf" style="background: #007bff;">Generar PDF</button>
+    </div>
+
+<script>
+
+document.getElementById('facturaForm').onsubmit = async function(e) {
+
+    e.preventDefault();
+
+    const resultDiv = document.getElementById('result');
+    const resultActions = document.getElementById('resultActions');
+
+    resultDiv.innerText = "Generando comprobante...";
+    resultActions.style.display = 'none';
+
+    try {
+
+        const formData = new FormData(this);
+
+        const data = Object.fromEntries(formData.entries());
+
+        data.productos = JSON.parse(data.productos);
+
+        const response = await fetch('/api/test-facturacion', {
+
+            method: 'POST',
+
+            headers: {
+                'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify(data)
+
+        });
+
+        if (!response.ok) {
+
+            const errorText = await response.text();
+
+            resultDiv.innerText = "Error:\n" + errorText;
+
+            return;
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+            resultDiv.innerText = "Error: " + result.error;
+            return;
+        }
+
+        // Guardar datos globales para usar en descargas
+        window.currentResult = result;
+
+        resultDiv.innerText = "✅ " + result.mensaje + "\n\n" +
+            "Tipo: " + result.tipo + "\n" +
+            "Serie: " + result.serie + "\n" +
+            "Correlativo: " + result.correlativo + "\n" +
+            "Hash: " + result.hash + "\n\n" +
+            "Respuesta SUNAT: " + JSON.stringify(result.sunat_response, null, 2);
+
+        // Mostrar botones de descargas
+        resultActions.style.display = 'block';
+
+    }
+    catch (error) {
+
+        resultDiv.innerText = "Error:\n" + error;
+
+        console.error(error);
+
+    }
+
+};
+
+// Descargar XML
+document.getElementById('downloadXml').onclick = function() {
+    if (!window.currentResult || !window.currentResult.xml) {
+        alert('No hay XML disponible');
+        return;
+    }
+
+    const xml = window.currentResult.xml;
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${window.currentResult.serie}-${window.currentResult.correlativo}.xml`;
+    a.click();
+};
+
+// Generar PDF
+document.getElementById('downloadPdf').onclick = async function() {
+    if (!window.currentResult) {
+        alert('Primero genera una boleta/factura');
+        return;
+    }
+
+    if (!window.currentResult.payload) {
+        alert('No hay payload disponible para generar PDF');
+        return;
+    }
+
+    try {
+        this.disabled = true;
+        this.innerText = 'Generando PDF...';
+
+        // Usar el mismo payload con el que se emitio
+        const payload = window.currentResult.payload;
+
+        const response = await fetch('/api/facturacion/generar-pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            alert('Error generando PDF: ' + result.message);
+            return;
+        }
+
+        // Descargar PDF
+        const pdfBase64 = result.pdf;
+        const binaryString = atob(pdfBase64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${window.currentResult.serie}-${window.currentResult.correlativo}.pdf`;
+        a.click();
+
+    } catch (error) {
+        alert('Error: ' + error);
+        console.error(error);
+    } finally {
+        this.disabled = false;
+        this.innerText = 'Generar PDF';
+    }
+};
+
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,15 @@
+/* Mascara personalizada para imagen tipo scribble */
+.mascara-img {
+  -webkit-mask-image: url('../assets/mascar.png');
+  mask-image: url('../assets/mascar.png');
+  -webkit-mask-size: cover;
+  mask-size: cover;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+/* Altura del navbar para uso en el menú desplegable */
+:root {
+  --navbar-height: 64px; /* Ajusta este valor si cambias el alto del navbar */
+}

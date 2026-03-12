@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Prueba Mercado Pago</title>
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #009ee3;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .monto {
+            font-size: 56px;
+            font-weight: bold;
+            text-align: center;
+            color: #2c3e50;
+            margin: 30px 0;
+            letter-spacing: -2px;
+        }
+        
+        .success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 24px;
+            display: none;
+            animation: slideIn 0.5s ease;
+        }
+        
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+            font-size: 14px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+            margin-bottom: 16px;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #009ee3;
+            box-shadow: 0 0 0 3px rgba(0,158,227,0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .btn-pagar {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #009ee3 0%, #0082c4 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-pagar:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,158,227,0.4);
+        }
+        
+        .btn-pagar:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .campo-mp {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            min-height: 48px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Prueba de Pago</h1>
+        
+        <div style="background: #e8f5e9; color: #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin: 15px 0; font-size: 13px; font-weight: bold;">
+            ✅ PRODUCCIÓN - Tarjetas de prueba (sin cargo real)
+        </div>
+        
+        <div class="monto">S/ 12.50</div>
+        
+        <div id="success-msg" class="success">
+            ✅ ¡PAGO EXITOSO!
+        </div>
+        
+        <div id="error-msg" class="error"></div>
+        
+        <form id="form-checkout">
+            <div>
+                <label>📧 Email:</label>
+                <input type="email" id="email-input" 
+                       value="{{ test_buyer_email }}"
+                       placeholder="Puedes cambiarlo si quieres" required>
+            </div>
+            
+            <div>
+                <label>💳 Número de tarjeta:</label>
+                <input type="text" id="form-checkout__cardNumber" 
+                       value="5031433215406351"
+                       placeholder="5031 4332 1540 6351 (Mastercard APRO)" maxlength="19" required>
+            </div>
+            
+            <div class="form-row">
+                <div>
+                    <label>📅 Vencimiento:</label>
+                    <input type="text" id="form-checkout__expirationDate" 
+                           value="11/27"
+                           placeholder="MM/YY" maxlength="5" required>
+                </div>
+                <div>
+                    <label>🔒 CVV:</label>
+                    <input type="text" id="form-checkout__securityCode" 
+                           value="123"
+                           placeholder="123" maxlength="4" required>
+                </div>
+            </div>
+            
+            <div>
+                <label>👤 Titular:</label>
+                <input type="text" id="form-checkout__cardholderName" 
+                       placeholder="Nombre como aparece en la tarjeta" required>
+            </div>
+            
+            <div class="form-row">
+                <div>
+                    <label>📋 Tipo documento:</label>
+                    <select id="form-checkout__identificationType"></select>
+                </div>
+                <div>
+                    <label>🆔 Número:</label>
+                    <input type="text" id="form-checkout__identificationNumber" 
+                           placeholder="12345678" required>
+                </div>
+            </div>
+            
+            <select id="form-checkout__issuer" style="display:none;"></select>
+            <select id="form-checkout__installments" style="display:none;"></select>
+            
+            <button type="submit" class="btn-pagar" id="btn-submit">
+                💳 Pagar S/ 12.50
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const PUBLIC_KEY = '{{ public_key }}';
+        const mp = new MercadoPago(PUBLIC_KEY, { locale: 'es-PE' });
+        
+        // Cargar tipos de identificación (DNI, CE, etc)
+        mp.getIdentificationTypes().then(types => {
+            const select = document.getElementById('form-checkout__identificationType');
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.id;
+                option.textContent = type.name;
+                select.appendChild(option);
+            });
+        }).catch(err => console.error('Error cargando tipos ID:', err));
+        
+        document.getElementById('form-checkout').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('btn-submit');
+            btn.disabled = true;
+            btn.textContent = '⏳ Procesando...';
+            
+            document.getElementById('error-msg').style.display = 'none';
+            
+            try {
+                const cardNumber = document.getElementById('form-checkout__cardNumber').value.replace(/\s/g, '');
+                const [month, year] = document.getElementById('form-checkout__expirationDate').value.split('/');
+                
+                const tokenData = {
+                    cardNumber: cardNumber,
+                    cardholderName: document.getElementById('form-checkout__cardholderName').value,
+                    cardExpirationMonth: month.trim(),
+                    cardExpirationYear: '20' + year.trim(),
+                    securityCode: document.getElementById('form-checkout__securityCode').value,
+                    identificationType: document.getElementById('form-checkout__identificationType').value,
+                    identificationNumber: document.getElementById('form-checkout__identificationNumber').value
+                };
+                
+                console.log('📤 Creando token...');
+                const token = await mp.createCardToken(tokenData);
+                console.log('🔍 Token completo:', JSON.stringify(token, null, 2));
+                
+                if (!token || !token.id) {
+                    const errorMsg = token?.cause ? JSON.stringify(token.cause) : (token?.error || 'Token inválido');
+                    console.error('❌ Error en token:', errorMsg);
+                    throw new Error('Error al crear token de tarjeta: ' + errorMsg);
+                }
+                console.log('✅ Token:', token.id);
+                
+                const pmResponse = await mp.getPaymentMethods({ bin: cardNumber.substring(0, 6) });
+                console.log('🔍 Payment Methods:', JSON.stringify(pmResponse, null, 2));
+                
+                if (!pmResponse || !pmResponse.results || pmResponse.results.length === 0) {
+                    throw new Error('No se pudo obtener el método de pago para esta tarjeta');
+                }
+                
+                const paymentMethod = pmResponse.results[0];
+                console.log('💳 Payment Method:', paymentMethod.id);
+                
+                if (!paymentMethod.issuer || !paymentMethod.issuer.id) {
+                    throw new Error('Método de pago inválido: sin emisor');
+                }
+                
+                const payload = {
+                    token: token.id,
+                    payment_method_id: paymentMethod.id,
+                    issuer_id: paymentMethod.issuer.id.toString(),
+                    email: document.getElementById('email-input').value,
+                    identification_type: document.getElementById('form-checkout__identificationType').value,
+                    identification_number: document.getElementById('form-checkout__identificationNumber').value
+                };
+                
+                console.log('📤 Enviando pago...');
+                const response = await fetch('/test_mp/procesar', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // ✅ PAGO APROBADO O EN REVISIÓN
+                    const successBox = document.getElementById('success-msg');
+                    if (data.status === 'in_process') {
+                        successBox.innerHTML = '<strong>⏳ Pago en Revisión Manual</strong><br>ID: ' + data.payment_id + '<br>Detalle: ' + data.status_detail + '<br><small>Mercado Pago está validando tu pago. Recibirás notificación del resultado.</small>';
+                        successBox.style.background = '#fff3cd';
+                        successBox.style.color = '#856404';
+                    } else {
+                        successBox.innerHTML = '<strong>✅ ¡PAGO EXITOSO!</strong><br>ID: ' + data.payment_id;
+                    }
+                    successBox.style.display = 'block';
+                    document.getElementById('form-checkout').style.display = 'none';
+                    console.log('✅ Pago procesado:', data.payment_id, 'Status:', data.status);
+                } else {
+                    // ❌ PAGO RECHAZADO O ERROR
+                    const errorBox = document.getElementById('error-msg');
+                    
+                    if (data.status_detail) {
+                        // Mensajes en español según el código de rechazo
+                        const mensajes = {
+                            'cc_rejected_high_risk': 'Pago rechazado por alto riesgo de fraude. Prueba con otra tarjeta o monto diferente.',
+                            'cc_rejected_bad_filled_security_code': 'CVV incorrecto',
+                            'cc_rejected_insufficient_amount': 'Fondos insuficientes',
+                            'cc_rejected_bad_filled_date': 'Fecha de vencimiento incorrecta'
+                        };
+                        
+                        const mensaje = mensajes[data.status_detail] || data.message || `Pago ${data.status}: ${data.status_detail}`;
+                        errorBox.textContent = '❌ ' + mensaje;
+                    } else if (data.checkout_url) {
+                        errorBox.innerHTML = '❌ CardForm no disponible. '
+                            + '<a href="' + data.checkout_url + '" target="_blank" style="color:#fff;text-decoration:underline;font-weight:bold;">Abrir Checkout</a>';
+                    } else {
+                        errorBox.textContent = '❌ ' + (data.message || JSON.stringify(data.error || data));
+                    }
+                    
+                    errorBox.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = '💳 Pagar S/ 12.50';
+                }
+                
+            } catch(error) {
+                console.error('❌ Error:', error);
+                document.getElementById('error-msg').textContent = '❌ ' + error.message;
+                document.getElementById('error-msg').style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = '💳 Pagar S/ 12.50';
+            }
+        });
+    </script>
+</body>
+</html>

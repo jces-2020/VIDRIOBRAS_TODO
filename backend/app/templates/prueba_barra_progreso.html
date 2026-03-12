@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Barra de Progreso</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .search-box {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .search-box input {
+            width: 300px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .search-box button {
+            padding: 8px 16px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .search-box button:hover {
+            background-color: #1565c0;
+        }
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-bar {
+            background-color: #e6eef8;
+            border-radius: 8px;
+            height: 12px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #1976d2;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            color: #5a6b7b;
+            font-size: 12px;
+        }
+        .error-message {
+            color: #e53935;
+            margin-top: 10px;
+            display: none;
+        }
+        .cliente-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prueba de Barra de Progreso</h1>
+        
+        <div class="search-box">
+            <h3>Buscar Cliente</h3>
+            <input type="email" id="emailInput" placeholder="Ingrese correo del cliente">
+            <button onclick="buscarCliente()">Buscar</button>
+        </div>
+
+        <div id="clienteInfo" class="cliente-info">
+            <h3>Información del Cliente</h3>
+            <div id="clienteDetalles"></div>
+        </div>
+
+        <div id="progressContainer" class="progress-container">
+            <h3>Estado del Pedido</h3>
+            <div class="progress-info">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span><b>Estado:</b> <span id="estadoText">Sin pedidos</span></span>
+                    <span><b>Progreso:</b> <span id="progresoText">0</span>%</span>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <div class="progress-labels">
+                <span>Proceso</span>
+                <span>Pagado</span>
+                <span>Listo</span>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+    </div>
+
+    <script>
+        async function buscarCliente() {
+            const email = document.getElementById('emailInput').value;
+            const progressContainer = document.getElementById('progressContainer');
+            const errorMessage = document.getElementById('errorMessage');
+            const clienteInfo = document.getElementById('clienteInfo');
+            const clienteDetalles = document.getElementById('clienteDetalles');
+
+            if (!email) {
+                errorMessage.textContent = 'Por favor ingrese un correo electrónico';
+                errorMessage.style.display = 'block';
+                progressContainer.style.display = 'none';
+                clienteInfo.style.display = 'none';
+                return;
+            }
+
+            try {
+                // Primero obtener el ID del cliente
+                const clienteRes = await fetch('http://localhost:5000/api/clientes/buscar_por_correo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ correo: email })
+                });
+
+                const clienteData = await clienteRes.json();
+                
+                if (!clienteData.success) {
+                    throw new Error('Cliente no encontrado');
+                }
+
+                // Mostrar información del cliente
+                clienteDetalles.innerHTML = `
+                    <p><b>Nombre:</b> ${clienteData.cliente.nombre || '-'}</p>
+                    <p><b>Correo:</b> ${clienteData.cliente.correo || '-'}</p>
+                    <p><b>Documento:</b> ${clienteData.cliente.documento || '-'}</p>
+                `;
+                clienteInfo.style.display = 'block';
+
+                // Obtener el progreso
+                const progresoRes = await fetch(`http://localhost:5000/api/barra_progreso/${clienteData.cliente.id_cliente}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const progresoData = await progresoRes.json();
+                
+                if (progresoData.success) {
+                    const { estado, progreso, mostrar_barra } = progresoData;
+                    
+                    if (mostrar_barra) {
+                        document.getElementById('estadoText').textContent = estado;
+                        document.getElementById('progresoText').textContent = progreso;
+                        document.getElementById('progressFill').style.width = `${progreso}%`;
+                        progressContainer.style.display = 'block';
+                        errorMessage.style.display = 'none';
+                    } else {
+                        progressContainer.style.display = 'none';
+                        errorMessage.textContent = 'El cliente no tiene estado asignado';
+                        errorMessage.style.display = 'block';
+                    }
+                } else {
+                    throw new Error('Error al obtener el progreso');
+                }
+            } catch (error) {
+                errorMessage.textContent = error.message || 'Error al buscar el cliente';
+                errorMessage.style.display = 'block';
+                progressContainer.style.display = 'none';
+                clienteInfo.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Prueba Login Google Backend</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    #result { margin-top: 24px; color: #1976d2; }
+    #googleBtn { margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <h2>Prueba Login con Google (Backend)</h2>
+  <div id="googleBtn"></div>
+  <div id="result"></div>
+  <script>
+    window.onload = function() {
+      window.google.accounts.id.initialize({
+        client_id: '1000681433446-mgbmp68bol11vjn56rfsb2ai9l732tbb.apps.googleusercontent.com',
+        callback: async (response) => {
+          document.getElementById('result').innerText = 'Enviando token al backend...';
+          try {
+            const res = await fetch('http://localhost:5000/api/auth/google', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                credential: response.credential,
+                documento: 'PRUEBA',
+                numero: '999999999'
+              })
+            });
+            const json = await res.json();
+            document.getElementById('result').innerText = JSON.stringify(json, null, 2);
+          } catch (e) {
+            document.getElementById('result').innerText = 'Error: ' + e;
+          }
+        },
+        ux_mode: 'popup',
+        auto_select: false
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById('googleBtn'),
+        { theme: 'outline', size: 'large', logo_alignment: 'left', text: 'signin_with', shape: 'pill' }
+      );
+    };
+  </script>
+</body>
+</html>

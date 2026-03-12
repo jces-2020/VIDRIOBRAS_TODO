@@ -1,0 +1,1 @@
+# TODO Steps for Installing Dependencies\n\n- [x] Step 1: Install backend dependencies (create venv and pip install)\n- [x] Step 2: Install frontend dependencies (npm install)\n- [x] Step 3: Test backend server (flask run started)\n- [x] Step 4: Test frontend dev server (npm run dev started)\n\nProject is functional and running!

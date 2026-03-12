@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tipografía del sistema */
+:root {
+  --font-heading: 'Oswald', sans-serif;
+  --font-body: 'Open Sans', sans-serif;
+}
+
+/* Estilos base */
+body {
+  font-family: var(--font-body);
+}
+
+/* Clases utilitarias de tipografía */
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* Aplicar Oswald a títulos por defecto */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+/* Aplicar Open Sans a párrafos por defecto */
+p, span, div {
+  font-family: var(--font-body);
+}

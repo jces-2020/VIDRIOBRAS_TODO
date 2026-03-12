@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Prueba JSON tipo_personal</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-top: 1rem; max-width: 400px; }
+        select, button { margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <h2>Prueba de Consumo de JSON desde /api/tipo_personal</h2>
+    <form id="categoriasForm" style="margin-top:1rem; display:none;">
+        <div id="categoriasContainer" style="display:flex; gap:2rem;"></div>
+    </form>
+    <div id="seleccion" class="card" style="display:none;"></div>
+    <script>
+        window.onload = cargarCategorias;
+        function cargarCategorias() {
+            fetch('/api/tipo_personal')
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        const cont = document.getElementById('categoriasContainer');
+                        cont.innerHTML = '';
+                        data.forEach((item, idx) => {
+                            const label = document.createElement('label');
+                            label.style.marginRight = '1.5rem';
+                            label.style.display = 'flex';
+                            label.style.alignItems = 'center';
+                            const radio = document.createElement('input');
+                            radio.type = 'radio';
+                            radio.value = item.id_tipo;
+                            radio.name = 'categoria';
+                            radio.onchange = mostrarSeleccion;
+                            if(idx === 0) radio.checked = true;
+                            label.appendChild(radio);
+                            label.appendChild(document.createTextNode(' ' + item.descripcion));
+                            cont.appendChild(label);
+                        });
+                        document.getElementById('categoriasForm').style.display = 'block';
+                        mostrarSeleccion();
+                    } else {
+                        cont.innerHTML = 'No hay categorías.';
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('categoriasContainer').innerHTML = 'Error al cargar categorías: ' + err;
+                });
+        }
+        function mostrarSeleccion() {
+            const seleccionado = document.querySelector('input[name="categoria"]:checked');
+            const div = document.getElementById('seleccion');
+            if (seleccionado) {
+                div.innerHTML = '<b>Seleccionado:</b><ul><li>' + seleccionado.nextSibling.textContent.trim() + '</li></ul>';
+                div.style.display = 'block';
+            } else {
+                div.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

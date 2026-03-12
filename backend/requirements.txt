@@ -1,0 +1,13 @@
+# Dependencias principales del backend (Flask + Supabase + Google Auth)
+# Versiones sugeridas estables; ajústalas si tu entorno lo requiere
+Flask>=2.3.3
+flask-cors>=4.0.0
+supabase>=2.7.4
+requests>=2.31.0
+PyJWT>=2.8.0
+google-auth>=2.23.4
+mercadopago==2.2.1
+python-dotenv>=1.0.0
+
+# Opcional (servidor de producción). Para desarrollo no es necesario
+# gunicorn>=21.2.0

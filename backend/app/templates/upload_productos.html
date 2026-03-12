@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Upload Productos</title>
+    <style>body{font-family:Arial,sans-serif;padding:18px} label{display:block;margin-top:8px}</style>
+  </head>
+  <body>
+    <h2>Subir imágenes - carpeta PRODUCTOS</h2>
+    <p>Selecciona categoría y archivo. Marca "Crear producto" si quieres que el servidor cree un registro inicial con la imagen.</p>
+
+    <label>Categoría
+      <select id="categoria" style="width:300px"><option value="">-- cargar categorías --</option></select>
+    </label>
+
+    <label>Archivo image
+      <input id="file" type="file" accept="image/*" />
+    </label>
+
+    <img id="preview" src="" alt="Vista previa" style="width:200px;height:120px;object-fit:cover;display:none;margin-top:8px;border:1px solid #ddd" />
+
+    <label><input id="createStub" type="checkbox" /> Crear producto (stub) con esta imagen</label>
+
+    <div style="margin-top:10px">
+      <button id="btnUpload">Subir imagen</button>
+      <button id="btnList" style="margin-left:8px">Listar imágenes de la categoría</button>
+    </div>
+
+    <div id="result" style="margin-top:16px"></div>
+
+    <script>
+      const categoriaSel = document.getElementById('categoria');
+      const fileInput = document.getElementById('file');
+      const btnUpload = document.getElementById('btnUpload');
+      const btnList = document.getElementById('btnList');
+      const result = document.getElementById('result');
+      const createStub = document.getElementById('createStub');
+      const preview = document.getElementById('preview');
+
+      fileInput.addEventListener('change', ()=>{
+        if (fileInput.files && fileInput.files[0]) {
+          preview.src = URL.createObjectURL(fileInput.files[0]);
+          preview.style.display = 'block';
+        } else {
+          preview.src = '';
+          preview.style.display = 'none';
+        }
+      });
+
+      async function cargarCategorias(){
+        try{
+          const r = await fetch('/api/categorias');
+          if(!r.ok) return;
+          const cats = await r.json();
+          categoriaSel.innerHTML = '<option value="">-- seleccionar --</option>';
+          cats.forEach(c=>{ const o = document.createElement('option'); o.value = c.id_categoria || c.id || c.id; o.textContent = c.nombre || c.descripcion || (c.id_categoria||c.id); categoriaSel.appendChild(o); });
+        }catch(e){ console.error(e); }
+      }
+
+      btnUpload.addEventListener('click', async ()=>{
+        if(!fileInput.files || !fileInput.files[0]) return alert('Selecciona un archivo');
+        const categoria = categoriaSel.value || 'otro';
+        const fd = new FormData(); fd.append('file', fileInput.files[0]); fd.append('categoria', categoria);
+        if(createStub.checked) fd.append('create_product','1');
+        result.innerText = 'Subiendo...';
+        try{
+          const r = await fetch('/api/productos/upload-image', { method:'POST', body: fd });
+          const j = await r.json();
+          if(!r.ok) throw new Error(JSON.stringify(j));
+          result.innerHTML = '<b>Subida OK</b><div>URL: <a href="'+j.url+'" target="_blank">'+j.url+'</a></div>' + (j.producto?('<div>Producto creado: '+(j.producto.id_producto||j.producto.id)+'</div>'):'');
+        }catch(e){ console.error(e); result.innerText = 'Error: '+String(e); }
+      });
+
+      btnList.addEventListener('click', async ()=>{
+        const categoria = categoriaSel.value || '';
+        result.innerText = 'Listando...';
+        try{
+          const q = categoria?('?categoria='+encodeURIComponent(categoria)):'';
+          const r = await fetch('/api/productos/images'+q);
+          const j = await r.json();
+          if(!r.ok) throw new Error(JSON.stringify(j));
+          if(!Array.isArray(j)) return result.innerText = JSON.stringify(j);
+          if(j.length===0) return result.innerText = 'No se encontraron imágenes';
+          const ul = document.createElement('div');
+          j.forEach(it=>{
+            const div = document.createElement('div');
+            div.style.padding='6px 0';
+            const a = document.createElement('a'); a.href = it.url; a.target='_blank'; a.textContent = it.name + ' \u2014 ' + (it.path||'');
+            div.appendChild(a);
+            if(it.url){ const img = document.createElement('img'); img.src = it.url; img.style.height='60px'; img.style.marginLeft='8px'; div.appendChild(img); }
+            ul.appendChild(div);
+          });
+          result.innerHTML = ''; result.appendChild(ul);
+        }catch(e){ console.error(e); result.innerText = 'Error: '+String(e); }
+      });
+
+      cargarCategorias();
+    </script>
+  </body>
+</html>

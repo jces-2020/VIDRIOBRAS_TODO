@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Prueba Almacén - vacío</title>
+    <style>body{font-family:Arial,sans-serif;padding:18px}</style>
+  </head>
+  <body>
+    <!-- Plantilla con selector Registro/Stock ya añadida -->
+    <h2>Prueba Almacén</h2>
+    <p>Selecciona una pestaña y luego elige o agrega un producto.</p>
+
+    <div style="margin-top:12px">
+      <button id="tabRegistro" style="padding:8px 12px; margin-right:8px">Registro de producto</button>
+      <button id="tabStock" style="padding:8px 12px">Stock</button>
+    </div>
+
+    <div id="sectionRegistro" style="margin-top:16px">
+      <div style="max-width:900px; display:flex; gap:16px;">
+        <div style="flex:1">
+          <label>Buscar producto
+            <input id="search" type="text" placeholder="Buscar por nombre o código..." style="width:100%; margin-bottom: 8px;" />
+          </label>
+          <div id="productList" style="height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 5px;">
+            <!-- La lista de productos se generará aquí -->
+          </div>
+          <div style="margin-top:8px">
+            <button id="btnAgregar">Agregar (nuevo)</button>
+          </div>
+        </div>
+
+        <div style="flex:2; border:1px solid #eee; padding:12px; border-radius:6px">
+          <h4>Formulario (completo)</h4>
+          <label>Nombre <input id="prov" style="width:100%" /></label>
+          <label>Código <input id="codigo" style="width:100%" /></label>
+          <label>Categoría <select id="categoria" style="width:100%"></select></label>
+          <label>Cantidad <input id="cantidad" type="number" style="width:100%" /></label>
+          <label>Precio unitario <input id="precio" type="number" step="0.01" style="width:100%" /></label>
+          <label>Descripción <input id="descripcion" style="width:100%" /></label>
+          <label>Grosor <input id="grosor" style="width:100%" /></label>
+          <img id="preview" src="" alt="preview" style="width:200px;height:120px;object-fit:cover;display:block;margin-top:6px;border:1px solid #ddd" />
+          <label style="margin-top:8px">Subir imagen (opcional) <input id="file" type="file" accept="image/*" /></label>
+          <div style="margin-top:8px">
+            <button id="guardar" style="padding:8px 10px">Guardar</button>
+            <button id="eliminar" style="padding:8px 10px; margin-left:8px; background:#fdd">Eliminar</button>
+            <button id="limpiar" style="padding:8px 10px; margin-left:8px">Limpiar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="sectionStock" style="margin-top:16px; display:none">
+      <p>Sección Stock (vacía por ahora).</p>
+    </div>
+
+    <script>
+      const tabRegistro = document.getElementById('tabRegistro');
+      const tabStock = document.getElementById('tabStock');
+      const sectionRegistro = document.getElementById('sectionRegistro');
+      const sectionStock = document.getElementById('sectionStock');
+      tabRegistro.addEventListener('click', ()=>{ sectionRegistro.style.display='block'; sectionStock.style.display='none'; });
+      tabStock.addEventListener('click', ()=>{ sectionRegistro.style.display='none'; sectionStock.style.display='block'; });
+
+      const searchInput = document.getElementById('search');
+      const productListDiv = document.getElementById('productList');
+      const btnAgregar = document.getElementById('btnAgregar');
+      const prov = document.getElementById('prov');
+      const codigo = document.getElementById('codigo');
+      const categoriaInput = document.getElementById('categoria');
+      const cantidad = document.getElementById('cantidad');
+      const precio = document.getElementById('precio');
+      const descripcion = document.getElementById('descripcion');
+      const grosor = document.getElementById('grosor');
+  // variable para mantener la URL original de imagen (IMG_P) sin exponer input
+  let originalImgUrl = '';
+      const preview = document.getElementById('preview');
+      const file = document.getElementById('file');
+
+      file.addEventListener('change', ()=>{
+        if (file.files && file.files[0]) {
+          preview.src = URL.createObjectURL(file.files[0]);
+        } else {
+          preview.src = originalImgUrl || '';
+        }
+      });
+
+      const guardar = document.getElementById('guardar');
+      const eliminar = document.getElementById('eliminar');
+      const limpiar = document.getElementById('limpiar');
+
+      let productosCache = [];
+      let seleccionado = null;
+
+      function renderProductList(productos) {
+        productListDiv.innerHTML = '';
+        productos.forEach(p => {
+          const item = document.createElement('div');
+          item.style = 'padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px;';
+          item.dataset.id = p.id_producto;
+
+          const img = document.createElement('img');
+          img.src = p.IMG_P || 'https://via.placeholder.com/40';
+          img.style = 'width: 40px; height: 40px; object-fit: cover;';
+
+          const text = document.createElement('span');
+          text.textContent = `${p.nombre || 'Sin nombre'} (${p.codigo || 'S/C'})`;
+
+          item.appendChild(img);
+          item.appendChild(text);
+
+          item.addEventListener('click', () => {
+            seleccionado = productosCache.find(x => String(x.id_producto) === String(p.id_producto)) || null;
+            if (seleccionado) {
+              // Quitar resaltado previo
+              Array.from(productListDiv.children).forEach(child => child.style.backgroundColor = 'transparent');
+              // Resaltar actual
+              item.style.backgroundColor = '#e0efff';
+              populateFormWithSelected();
+            }
+          });
+          productListDiv.appendChild(item);
+        });
+      }
+
+      async function cargarProductos(){
+        try{
+          const r = await fetch('/api/productos');
+          const data = await r.json();
+          productosCache = Array.isArray(data) ? data : [];
+          renderProductList(productosCache);
+        }catch(e){ console.error('Error cargar productos', e); }
+      }
+
+      // cargar categorias y poblar el select de categoría (usa id)
+      async function cargarCategorias(){
+        try{
+          const r = await fetch('/api/categorias');
+          if(!r.ok) return;
+          const cats = await r.json();
+          // si el select es un input actualmente, lo convertimos a select dinámicamente
+          const catEl = document.getElementById('categoria');
+          if(catEl && catEl.tagName.toLowerCase() === 'input'){
+            const sel = document.createElement('select'); sel.id = 'categoria'; sel.style.width='100%';
+            const empty = document.createElement('option'); empty.value=''; empty.textContent='-- seleccionar --'; sel.appendChild(empty);
+            cats.forEach(c=>{ const o = document.createElement('option'); o.value = c.id_categoria || c.id || c.id; o.textContent = c.nombre || c.descripcion || (c.id_categoria||c.id); sel.appendChild(o); });
+            catEl.parentNode.replaceChild(sel, catEl);
+          } else if(catEl && catEl.tagName.toLowerCase() === 'select'){
+            catEl.innerHTML = '<option value="">-- seleccionar --</option>';
+            cats.forEach(c=>{ const o = document.createElement('option'); o.value = c.id_categoria || c.id || c.id; o.textContent = c.nombre || c.descripcion || (c.id_categoria||c.id); catEl.appendChild(o); });
+          }
+        }catch(e){ console.error('No se pudieron cargar categorias', e); }
+      }
+
+      searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filtered = productosCache.filter(p => 
+          (p.nombre && p.nombre.toLowerCase().includes(searchTerm)) ||
+          (p.codigo && p.codigo.toLowerCase().includes(searchTerm))
+        );
+        renderProductList(filtered);
+      });
+
+      function populateFormWithSelected() {
+        if (!seleccionado) return;
+        prov.value = seleccionado.nombre || '';
+        codigo.value = seleccionado.codigo || '';
+        const catEl = document.getElementById('categoria');
+        if (catEl) {
+          try { catEl.value = seleccionado.categoria_id || seleccionado.categoria || ''; } catch (e) {}
+        }
+        cantidad.value = seleccionado.cantidad || '';
+        precio.value = seleccionado.precio_unitario || '';
+        descripcion.value = seleccionado.descripcion || '';
+        grosor.value = seleccionado.grosor || '';
+        originalImgUrl = seleccionado.IMG_P || '';
+        preview.src = seleccionado.IMG_P || '';
+        file.value = ''; // Limpiar el input de archivo
+      }
+
+      btnAgregar.addEventListener('click', ()=>{
+        seleccionado = null;
+        limpiarFormulario();
+        Array.from(productListDiv.children).forEach(child => child.style.backgroundColor = 'transparent');
+      });
+
+      function limpiarFormulario(){ 
+        prov.value=''; codigo.value=''; 
+        const catEl = document.getElementById('categoria'); if(catEl) catEl.value='';
+        cantidad.value=''; precio.value=''; descripcion.value=''; grosor.value=''; preview.src=''; file.value=''; originalImgUrl = '';
+        seleccionado = null;
+        Array.from(productListDiv.children).forEach(child => child.style.backgroundColor = 'transparent');
+      }
+
+      limpiar.addEventListener('click', limpiarFormulario);
+
+      guardar.addEventListener('click', async ()=>{
+  const catElSave = document.getElementById('categoria');
+  const categoria_val = catElSave ? catElSave.value : categoriaInput.value;
+  // payload básico sin IMG_P todavía
+  const payload = { codigo: codigo.value, nombre: prov.value, cantidad: cantidad.value || null, precio_unitario: precio.value || null, descripcion: descripcion.value, grosor: grosor.value, categoria_id: categoria_val };
+        try{
+          // Si estamos creando un nuevo producto y hay archivo, subimos indicando que cree un stub de producto y use la URL como IMG_P
+          if(!seleccionado || !seleccionado.id_producto){
+            if(file.files && file.files[0]){
+              const fd = new FormData(); fd.append('file', file.files[0]); fd.append('categoria', categoria_val || 'otro'); fd.append('create_product','1');
+              const up = await fetch('/api/productos/upload-image', { method:'POST', body: fd });
+              const ud = await up.json();
+              if(!up.ok) throw new Error((ud && ud.error) ? ud.error : 'Error subiendo imagen');
+              // si el servidor creó el registro, ud.producto contendrá el objeto creado con id
+              if(ud && ud.producto && (ud.producto.id_producto || ud.producto.id)){
+                const newId = ud.producto.id_producto || ud.producto.id;
+                // ahora completamos con PUT para actualizar el resto de campos
+                const res = await fetch(`/api/productos/${newId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if(!res.ok){ const t = await res.text(); throw new Error(t || 'Update after upload failed'); }
+                alert('Producto creado con imagen');
+              } else {
+                // no se creó registro automático; fallback: subir imagen, tomar URL y crear via POST normal
+                const imageUrl = ud && ud.url ? ud.url : null;
+                if(imageUrl) payload.IMG_P = imageUrl;
+                const res = await fetch('/api/productos', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if(!res.ok){ const t = await res.text(); throw new Error(t || 'Create failed'); }
+                alert('Producto creado');
+              }
+            } else {
+              // no hay imagen, crear directamente
+              const res = await fetch('/api/productos', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+              if(!res.ok){ const t = await res.text(); throw new Error(t || 'Create failed'); }
+              alert('Producto creado');
+            }
+          } else {
+            // edición de producto existente: si hay archivo, subir (sin crear producto) y luego PUT
+            if(file.files && file.files[0]){
+              const fd = new FormData(); fd.append('file', file.files[0]); fd.append('categoria', categoria_val || 'otro');
+              const up = await fetch('/api/productos/upload-image', { method:'POST', body: fd });
+              const ud = await up.json(); if(!up.ok) throw new Error((ud && ud.error)?ud.error:'Upload failed');
+              if(ud && ud.url) payload.IMG_P = ud.url;
+            }
+            const res = await fetch(`/api/productos/${seleccionado.id_producto}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            if(!res.ok){ const t = await res.text(); throw new Error(t || 'Update failed'); }
+            alert('Producto actualizado');
+          }
+
+          await cargarProductos();
+          limpiarFormulario(); productSelect.value=''; productSelect.dispatchEvent(new Event('change'));
+        }catch(e){ console.error(e); alert(String(e)); }
+      });
+
+      eliminar.addEventListener('click', async ()=>{
+        if(!seleccionado || !seleccionado.id_producto) return alert('Selecciona un producto para eliminar');
+        if(!confirm('¿Eliminar este producto y su imagen (si existe)?')) return;
+        try{
+          const res = await fetch(`/api/productos/${seleccionado.id_producto}`, { method:'DELETE' });
+          if(!res.ok){ const t = await res.text(); throw new Error(t || 'Delete failed'); }
+          alert('Producto eliminado');
+          await cargarProductos();
+          limpiarFormulario();
+        }catch(e){ console.error(e); alert(String(e)); }
+      });
+
+  // carga inicial
+  cargarProductos();
+  cargarCategorias();
+    </script>
+  </body>
+</html>

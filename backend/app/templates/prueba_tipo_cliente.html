@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Prueba JSON tipo_cliente</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-top: 1rem; max-width: 400px; }
+        select, button { margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <h2>Prueba de Consumo de JSON desde /api/tipo_cliente</h2>
+    <button onclick="cargarDatos()">Cargar Tipos de Cliente</button>
+    <div id="resultado" class="card" style="display:none;"></div>
+    <select id="selector" style="display:none; margin-top:1rem;"></select>
+    <script>
+        function cargarDatos() {
+            fetch('/api/tipo_cliente')
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        const selector = document.getElementById('selector');
+                        selector.innerHTML = '';
+                        data.forEach(item => {
+                            const opt = document.createElement('option');
+                            opt.value = item.id_tipo;
+                            opt.textContent = item.descripcion;
+                            selector.appendChild(opt);
+                        });
+                        selector.style.display = 'inline-block';
+                        selector.onchange = function() {
+                            mostrarDetalle(data.find(x => x.id_tipo == selector.value));
+                        };
+                        mostrarDetalle(data[0]);
+                    } else {
+                        document.getElementById('resultado').textContent = 'No hay datos.';
+                        document.getElementById('resultado').style.display = 'block';
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('resultado').textContent = 'Error al cargar datos: ' + err;
+                    document.getElementById('resultado').style.display = 'block';
+                });
+        }
+        function mostrarDetalle(item) {
+            const div = document.getElementById('resultado');
+            div.innerHTML = `<b>ID:</b> ${item.id_tipo} <br><b>Descripción:</b> ${item.descripcion}`;
+            div.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
