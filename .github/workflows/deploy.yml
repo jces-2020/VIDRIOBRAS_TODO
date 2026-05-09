@@ -1,0 +1,57 @@
+name: Deploy React App via SSH
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Descargar repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Configurar Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # 3️⃣ Instalar dependencias
+      - name: Install dependencies
+        run: npm install
+
+      # 4️⃣ Construir React
+      - name: Build React app
+        run: npm run build
+
+      # 5️⃣ Instalar sshpass
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      # 6️⃣ Deploy por SSH
+      - name: Deploy via SSH
+        env:
+          SSH_HOST: 62.72.62.79
+          SSH_PORT: 65002
+          SSH_USER: u978793163
+          SSH_PASSWORD: TU_PASSWORD_SSH
+        run: |
+          sshpass -p "$SSH_PASSWORD" scp -P $SSH_PORT -o StrictHostKeyChecking=no -r ./build/* \
+          $SSH_USER@$SSH_HOST:~/public_html/
+
+      # 7️⃣ Permisos
+      - name: Fix permissions
+        env:
+          SSH_HOST: 62.72.62.79
+          SSH_PORT: 65002
+          SSH_USER: u978793163
+          SSH_PASSWORD: TU_PASSWORD_SSH
+        run: |
+          sshpass -p "$SSH_PASSWORD" ssh -p $SSH_PORT -o StrictHostKeyChecking=no \
+          $SSH_USER@$SSH_HOST "
+          chmod -R 755 ~/public_html
+          "
