@@ -49,7 +49,7 @@ jobs:
           SSH_HOST: 62.72.62.79
           SSH_PORT: 65002
           SSH_USER: u978793163
-          SSH_PASSWORD: TU_PASSWORD_SSH
+          SSH_PASSWORD: J/7641212j
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -p $SSH_PORT -o StrictHostKeyChecking=no \
           $SSH_USER@$SSH_HOST "
