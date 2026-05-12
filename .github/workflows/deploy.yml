@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
+    environment: PROD
     steps:
       # 1️⃣ Descargar repositorio
       - name: Checkout repository
@@ -22,10 +22,12 @@ jobs:
 
       # 3️⃣ Instalar dependencias
       - name: Install dependencies
+        working-directory: frontend/Reac/mi-proyecto
         run: npm install
 
       # 4️⃣ Construir React
       - name: Build React app
+        working-directory: frontend/Reac/mi-proyecto
         run: npm run build
 
       # 5️⃣ Instalar sshpass
@@ -38,9 +40,9 @@ jobs:
           SSH_HOST: 62.72.62.79
           SSH_PORT: 65002
           SSH_USER: u978793163
-          SSH_PASSWORD: J/76411212j
+          SSH_PASSWORD:  ${{ vars.GT_SSH_PASSWORD }}
         run: |
-          sshpass -p "$SSH_PASSWORD" scp -P $SSH_PORT -o StrictHostKeyChecking=no -r ./build/* \
+          sshpass -p "$SSH_PASSWORD" scp -P $SSH_PORT -o StrictHostKeyChecking=no -r ./frontend/Reac/mi-proyecto/build/* \
           $SSH_USER@$SSH_HOST:~/public_html/
 
       # 7️⃣ Permisos
@@ -49,7 +51,7 @@ jobs:
           SSH_HOST: 62.72.62.79
           SSH_PORT: 65002
           SSH_USER: u978793163
-          SSH_PASSWORD: J/7641212j
+          SSH_PASSWORD:  ${{ vars.GT_SSH_PASSWORD }}
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -p $SSH_PORT -o StrictHostKeyChecking=no \
           $SSH_USER@$SSH_HOST "
