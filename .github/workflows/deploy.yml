@@ -34,8 +34,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      - name: Mostrar variable
-        run: echo "Variable = ${{ secrets.GT_SSH_PASSWORD }}"
+
 
       # 6️⃣ Deploy por SSH
       - name: Deploy via SSH
