@@ -11,11 +11,11 @@ jobs:
     environment: PROD
 
     steps:
-      # Descargar repositorio
+      # Clonar repositorio
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Configurar Node.js
+      # Configurar Node
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -26,20 +26,25 @@ jobs:
         working-directory: frontend/Reac/mi-proyecto
         run: npm install
 
-      # Construir React/Vite
-      - name: Build React app
+      # Build React/Vite
+      - name: Build app
         working-directory: frontend/Reac/mi-proyecto
         run: npm run build
 
-      # Verificar build generado
+      # Verificar build
       - name: Verify build
         run: ls -la ./frontend/Reac/mi-proyecto/dist
+
+      # Comprimir build
+      - name: Create tar file
+        run: |
+          tar -czf deploy.tar.gz -C ./frontend/Reac/mi-proyecto/dist .
 
       # Instalar sshpass
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      # Limpiar carpeta remota
+      # Limpiar public_html
       - name: Clean public_html
         env:
           SSH_HOST: 62.72.62.79
@@ -54,8 +59,8 @@ jobs:
           $SSH_USER@$SSH_HOST \
           "rm -rf ~/public_html/*"
 
-      # Subir nuevo frontend
-      - name: Deploy via SSH
+      # Subir archivo comprimido
+      - name: Upload tar file
         env:
           SSH_HOST: 62.72.62.79
           SSH_PORT: 65002
@@ -66,10 +71,25 @@ jobs:
           sshpass -p "$SSH_PASSWORD" scp \
           -P "$SSH_PORT" \
           -o StrictHostKeyChecking=no \
-          -r ./frontend/Reac/mi-proyecto/dist/. \
-          $SSH_USER@$SSH_HOST:~/public_html/
+          deploy.tar.gz \
+          $SSH_USER@$SSH_HOST:~/
 
-      # Ajustar permisos
+      # Descomprimir en public_html
+      - name: Extract files
+        env:
+          SSH_HOST: 62.72.62.79
+          SSH_PORT: 65002
+          SSH_USER: u978793163
+          SSH_PASSWORD: ${{ secrets.GT_SSH_PASSWORD }}
+
+        run: |
+          sshpass -p "$SSH_PASSWORD" ssh \
+          -p "$SSH_PORT" \
+          -o StrictHostKeyChecking=no \
+          $SSH_USER@$SSH_HOST \
+          "tar -xzf ~/deploy.tar.gz -C ~/public_html && rm ~/deploy.tar.gz"
+
+      # Permisos
       - name: Fix permissions
         env:
           SSH_HOST: 62.72.62.79
@@ -84,7 +104,7 @@ jobs:
           $SSH_USER@$SSH_HOST \
           "chmod -R 755 ~/public_html"
 
-      # Verificar archivos subidos
+      # Verificar archivos finales
       - name: Verify uploaded files
         env:
           SSH_HOST: 62.72.62.79
