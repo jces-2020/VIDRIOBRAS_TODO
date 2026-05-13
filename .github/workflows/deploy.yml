@@ -2,119 +2,60 @@ name: Deploy React App via SSH
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    environment: PROD
 
     steps:
-      # Clonar repositorio
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout código
+        uses: actions/checkout@v3
 
-      # Configurar Node
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: '18'
+          cache: 'npm'
 
-      # Instalar dependencias
-      - name: Install dependencies
-        working-directory: frontend/Reac/mi-proyecto
-        run: npm install
+      - name: Instalar dependencias
+        run: npm ci
 
-      # Build React/Vite
-      - name: Build app
-        working-directory: frontend/Reac/mi-proyecto
+      - name: Build React app
         run: npm run build
 
-      # Verificar build
-      - name: Verify build
-        run: ls -la ./frontend/Reac/mi-proyecto/dist
+      - name: Comprimir build en tar
+        run: tar -czf build.tar.gz -C build .
 
-      # Comprimir build
-      - name: Create tar file
-        run: |
-          tar -czf deploy.tar.gz -C ./frontend/Reac/mi-proyecto/dist .
+      - name: Instalar sshpass
+        run: sudo apt-get install -y sshpass
 
-      # Instalar sshpass
-      - name: Install sshpass
-        run: sudo apt-get update && sudo apt-get install -y sshpass
-
-      # Limpiar public_html
-      - name: Clean public_html
+      - name: Subir tar al servidor
         env:
           SSH_HOST: 62.72.62.79
           SSH_PORT: 65002
           SSH_USER: u978793163
           SSH_PASSWORD: ${{ secrets.GT_SSH_PASSWORD }}
-
-        run: |
-          sshpass -p "$SSH_PASSWORD" ssh \
-          -p "$SSH_PORT" \
-          -o StrictHostKeyChecking=no \
-          $SSH_USER@$SSH_HOST \
-          "rm -rf ~/public_html/*"
-
-      # Subir archivo comprimido
-      - name: Upload tar file
-        env:
-          SSH_HOST: 62.72.62.79
-          SSH_PORT: 65002
-          SSH_USER: u978793163
-          SSH_PASSWORD: ${{ secrets.GT_SSH_PASSWORD }}
-
         run: |
           sshpass -p "$SSH_PASSWORD" scp \
-          -P "$SSH_PORT" \
-          -o StrictHostKeyChecking=no \
-          deploy.tar.gz \
-          $SSH_USER@$SSH_HOST:~/
+            -P "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            build.tar.gz \
+            $SSH_USER@$SSH_HOST:~/public_html/build.tar.gz
 
-      # Descomprimir en public_html
-      - name: Extract files
+      - name: Extraer y limpiar en el servidor
         env:
           SSH_HOST: 62.72.62.79
           SSH_PORT: 65002
           SSH_USER: u978793163
           SSH_PASSWORD: ${{ secrets.GT_SSH_PASSWORD }}
-
         run: |
           sshpass -p "$SSH_PASSWORD" ssh \
-          -p "$SSH_PORT" \
-          -o StrictHostKeyChecking=no \
-          $SSH_USER@$SSH_HOST \
-          "tar -xzf ~/deploy.tar.gz -C ~/public_html && rm ~/deploy.tar.gz"
-
-      # Permisos
-      - name: Fix permissions
-        env:
-          SSH_HOST: 62.72.62.79
-          SSH_PORT: 65002
-          SSH_USER: u978793163
-          SSH_PASSWORD: ${{ secrets.GT_SSH_PASSWORD }}
-
-        run: |
-          sshpass -p "$SSH_PASSWORD" ssh \
-          -p "$SSH_PORT" \
-          -o StrictHostKeyChecking=no \
-          $SSH_USER@$SSH_HOST \
-          "chmod -R 755 ~/public_html"
-
-      # Verificar archivos finales
-      - name: Verify uploaded files
-        env:
-          SSH_HOST: 62.72.62.79
-          SSH_PORT: 65002
-          SSH_USER: u978793163
-          SSH_PASSWORD: ${{ secrets.GT_SSH_PASSWORD }}
-
-        run: |
-          sshpass -p "$SSH_PASSWORD" ssh \
-          -p "$SSH_PORT" \
-          -o StrictHostKeyChecking=no \
-          $SSH_USER@$SSH_HOST \
-          "find ~/public_html"
+            -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            $SSH_USER@$SSH_HOST \
+            "cd ~/public_html && \
+             find . -not -name 'build.tar.gz' -delete && \
+             tar -xzf build.tar.gz && \
+             rm build.tar.gz && \
+             ls -la"
