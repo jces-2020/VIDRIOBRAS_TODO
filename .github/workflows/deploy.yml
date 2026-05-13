@@ -58,6 +58,7 @@ jobs:
           SSH_USER: u978793163
           SSH_PASSWORD: ${{ secrets.GT_SSH_PASSWORD }}
 
+          
         run: |
           sshpass -p "$SSH_PASSWORD" ssh \
           -p $SSH_PORT \
