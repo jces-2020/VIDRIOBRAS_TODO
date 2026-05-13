@@ -31,7 +31,7 @@ jobs:
         working-directory: frontend/Reac/mi-proyecto
         run: npm run build
 
-      # Verificar build
+      # Verificar build generado
       - name: Verify build
         run: ls -la ./frontend/Reac/mi-proyecto/dist
 
@@ -66,7 +66,7 @@ jobs:
           sshpass -p "$SSH_PASSWORD" scp \
           -P "$SSH_PORT" \
           -o StrictHostKeyChecking=no \
-          -r ./frontend/Reac/mi-proyecto/dist/* \
+          -r ./frontend/Reac/mi-proyecto/dist/. \
           $SSH_USER@$SSH_HOST:~/public_html/
 
       # Ajustar permisos
@@ -97,4 +97,4 @@ jobs:
           -p "$SSH_PORT" \
           -o StrictHostKeyChecking=no \
           $SSH_USER@$SSH_HOST \
-          "ls -la ~/public_html"
+          "find ~/public_html"
