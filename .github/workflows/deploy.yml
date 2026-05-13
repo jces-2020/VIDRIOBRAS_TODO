@@ -34,13 +34,16 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
+      - name: Mostrar variable
+        run: echo "Variable = ${{ secrets.GT_SSH_PASSWORD }}"
+
       # 6️⃣ Deploy por SSH
       - name: Deploy via SSH
         env:
           SSH_HOST: 62.72.62.79
           SSH_PORT: 65002
           SSH_USER: u978793163
-          SSH_PASSWORD:  ${{ vars.GT_SSH_PASSWORD }}
+          SSH_PASSWORD:  ${{ secrets.GT_SSH_PASSWORD }}
         run: |
           sshpass -p "$SSH_PASSWORD" scp -P $SSH_PORT -o StrictHostKeyChecking=no -r ./frontend/Reac/mi-proyecto/build/* \
           $SSH_USER@$SSH_HOST:~/public_html/
@@ -51,7 +54,7 @@ jobs:
           SSH_HOST: 62.72.62.79
           SSH_PORT: 65002
           SSH_USER: u978793163
-          SSH_PASSWORD:  ${{ vars.GT_SSH_PASSWORD }}
+          SSH_PASSWORD:  ${{ secrets.GT_SSH_PASSWORD }}
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -p $SSH_PORT -o StrictHostKeyChecking=no \
           $SSH_USER@$SSH_HOST "
