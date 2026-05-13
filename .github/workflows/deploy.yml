@@ -8,54 +8,58 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: PROD
+
     steps:
-      # 1️⃣ Descargar repositorio
+      # Descargar repositorio
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Configurar Node.js
+      # Configurar Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
 
-      # 3️⃣ Instalar dependencias
+      # Instalar dependencias
       - name: Install dependencies
         working-directory: frontend/Reac/mi-proyecto
         run: npm install
 
-      # 4️⃣ Construir React
+      # Construir React
       - name: Build React app
         working-directory: frontend/Reac/mi-proyecto
         run: npm run build
 
-      # 5️⃣ Instalar sshpass
+      # Instalar sshpass
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
-
-
-      # 6️⃣ Deploy por SSH
+      # Deploy
       - name: Deploy via SSH
         env:
           SSH_HOST: 62.72.62.79
           SSH_PORT: 65002
           SSH_USER: u978793163
-          SSH_PASSWORD:  ${{ secrets.GT_SSH_PASSWORD }}
+          SSH_PASSWORD: ${{ secrets.GT_SSH_PASSWORD }}
+
         run: |
-          sshpass -p "$SSH_PASSWORD" scp -P $SSH_PORT -o StrictHostKeyChecking=no -r ./frontend/Reac/mi-proyecto/dist/* \
+          sshpass -p "$SSH_PASSWORD" scp \
+          -P $SSH_PORT \
+          -o StrictHostKeyChecking=no \
+          -r ./frontend/Reac/mi-proyecto/dist/* \
           $SSH_USER@$SSH_HOST:~/public_html/
 
-      # 7️⃣ Permisos
+      # Permisos
       - name: Fix permissions
         env:
           SSH_HOST: 62.72.62.79
           SSH_PORT: 65002
           SSH_USER: u978793163
-          SSH_PASSWORD:  ${{ secrets.GT_SSH_PASSWORD }}
+          SSH_PASSWORD: ${{ secrets.GT_SSH_PASSWORD }}
+
         run: |
-          sshpass -p "$SSH_PASSWORD" ssh -p $SSH_PORT -o StrictHostKeyChecking=no \
-          $SSH_USER@$SSH_HOST "
-          chmod -R 755 ~/public_html
-          "
+          sshpass -p "$SSH_PASSWORD" ssh \
+          -p $SSH_PORT \
+          -o StrictHostKeyChecking=no \
+          $SSH_USER@$SSH_HOST \
+          "chmod -R 755 ~/public_html"
