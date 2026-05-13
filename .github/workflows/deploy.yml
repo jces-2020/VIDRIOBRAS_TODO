@@ -10,22 +10,23 @@ jobs:
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v4  # ← v4, no v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4  # ← v4, no v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-          # ← Eliminado cache: 'npm' porque no tienes package-lock.json
 
       - name: Instalar dependencias
-        run: npm install  # ← npm install, no npm ci (ci requiere lock file)
+        working-directory: ./frontend/Reac/mi-proyecto   # ← ruta correcta
+        run: npm install
 
       - name: Build React app
+        working-directory: ./frontend/Reac/mi-proyecto   # ← ruta correcta
         run: npm run build
 
       - name: Comprimir build en tar
-        run: tar -czf build.tar.gz -C build .
+        run: tar -czf build.tar.gz -C frontend/Reac/mi-proyecto/dist .  # ← dist no build (Vite)
 
       - name: Instalar sshpass
         run: sudo apt-get install -y sshpass
