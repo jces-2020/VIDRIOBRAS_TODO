@@ -12,11 +12,11 @@ jobs:
     steps:
       # 1️⃣ Descargar repositorio
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # 2️⃣ Configurar Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
@@ -44,7 +44,7 @@ jobs:
           SSH_USER: u978793163
           SSH_PASSWORD:  ${{ secrets.GT_SSH_PASSWORD }}
         run: |
-          sshpass -p "$SSH_PASSWORD" scp -P $SSH_PORT -o StrictHostKeyChecking=no -r ./frontend/Reac/mi-proyecto/build/* \
+          sshpass -p "$SSH_PASSWORD" scp -P $SSH_PORT -o StrictHostKeyChecking=no -r ./frontend/Reac/mi-proyecto/dist/* \
           $SSH_USER@$SSH_HOST:~/public_html/
 
       # 7️⃣ Permisos
