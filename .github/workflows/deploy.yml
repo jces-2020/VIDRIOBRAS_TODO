@@ -43,8 +43,7 @@ jobs:
             -P "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             build.tar.gz \
-            $SSH_USER@$SSH_HOST:~/public_html/build.tar.gz
-
+            $SSH_USER@$SSH_HOST:~/domains/vidriobras.com/public_html/build.tar.gz
 
       - name: Extraer y limpiar en el servidor
         env:
@@ -57,7 +56,7 @@ jobs:
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             $SSH_USER@$SSH_HOST \
-            "cd ~/public_html && \
+            "cd ~/domains/vidriobras.com/public_html && \
              find . -mindepth 1 -maxdepth 1 -not -name 'build.tar.gz' -exec rm -rf {} + && \
              tar -xzf build.tar.gz && \
              rm build.tar.gz && \
