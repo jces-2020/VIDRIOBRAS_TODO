@@ -45,6 +45,7 @@ jobs:
             build.tar.gz \
             $SSH_USER@$SSH_HOST:~/domains/vidriobras.com/public_html/build.tar.gz
 
+
       - name: Extraer y limpiar en el servidor
         env:
           SSH_HOST: 62.72.62.79
